@@ -1,8 +1,8 @@
 # utils
-工具类
+#工具类
 
-qurey:使用注解的方式拼装查询语句
-	QueryForm queryForm = new QueryForm();
+##qurey:使用注解的方式拼装查询语句
+	'QueryForm queryForm = new QueryForm();
 		queryForm.setMinWeight(100);
 		queryForm.setMaxWerght(200);
 		queryForm.setName("qlm");
@@ -64,6 +64,6 @@ qurey:使用注解的方式拼装查询语句
 		this.ages = ages;
 	}
 	
-}
+}'
 
-security:加密工具类
+##security:加密工具类
