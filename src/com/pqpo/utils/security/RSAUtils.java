@@ -3,11 +3,11 @@ package com.pqpo.utils.security;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 
@@ -23,18 +23,17 @@ public class RSAUtils {
 	private static final String ALGORITHM = "RSA";
 	private static final String CHARTSET = "utf-8";
 	private static final int KEY_SIZE = 1024;
-	
-	private volatile static KeyPairGenerator keyPairGen;
-	
+
 	private RSAUtils(){}
-	
+
 	/**
 	 * 获取密钥
 	 * @return
 	 * @throws Exception
 	 */
 	public static RASKeys generateKey() throws Exception {
-		KeyPairGenerator keyPairGenerator = getKeyPairGen();
+		KeyPairGenerator keyPairGenerator =  KeyPairGenerator.getInstance(ALGORITHM);
+		keyPairGenerator.initialize(KEY_SIZE);
 		KeyPair keyPair = keyPairGenerator.generateKeyPair();
 		PublicKey publicKey = keyPair.getPublic();
 		PrivateKey privateKey = keyPair.getPrivate();
@@ -43,7 +42,7 @@ public class RSAUtils {
 		rasKeys.setPrivateKey(privateKey);
 		return rasKeys;
 	}
-	
+
 	/**
 	 * 获取公钥
 	 * @param keys
@@ -52,7 +51,7 @@ public class RSAUtils {
 	public static String getPublicKey(RASKeys keys){
 		return BASE64.encode(keys.getPublicKey().getEncoded());
 	}
-	
+
 	/**
 	 * 获取私钥
 	 * @param keys
@@ -74,7 +73,7 @@ public class RSAUtils {
 		byte[] results = encryptByPrivateKey(data.getBytes(CHARTSET),key);
 		return BASE64.encode(results);
 	}
-	
+
 	/**
 	 * 私钥加密
 	 * @param data
@@ -83,11 +82,11 @@ public class RSAUtils {
 	 * @throws Exception
 	 */
 	public static byte[] encryptByPrivateKey(byte[] data,String key) throws Exception{
-		
+
 		if(data.length>(KEY_SIZE/8-11)){
 			throw new IllegalBlockSizeException("Data must not be longer than "+(KEY_SIZE/8-11)+" bytes.Data length:"+data.length);
 		}
-		
+
 		byte[] keyBytes = BASE64.decode(key);
 		PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
 		KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
@@ -97,6 +96,73 @@ public class RSAUtils {
 		return cipher.doFinal(data);
 	}
 	
+	/**
+	 * 公钥加密
+	 * @param data
+	 * @param key
+	 * @return
+	 * @throws Exception
+	 */
+	public static String encryptByPublicKey(String data,String key) throws Exception{
+		byte[] encrypt = encryptByPublicKey(data.getBytes(CHARTSET), key);
+		return BASE64.encode(encrypt);
+	}
+	
+	/**
+	 * 公钥加密
+	 * @param data
+	 * @param key
+	 * @return
+	 * @throws Exception
+	 */
+	public static byte[] encryptByPublicKey(byte[] data,String key) throws Exception{
+		
+		if(data.length>(KEY_SIZE/8-11)){
+			throw new IllegalBlockSizeException("Data must not be longer than "+(KEY_SIZE/8-11)+" bytes.Data length:"+data.length);
+		}
+		
+		byte[] keyBytes = BASE64.decode(key);
+		X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
+		KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
+		PublicKey publicKey = keyFactory.generatePublic(keySpec);
+		Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
+		cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+		return cipher.doFinal(data);
+	}
+	
+	/*********************************************解密*********************************************************/
+	
+	/**
+	 * 私钥解密
+	 * @param data
+	 * @param key
+	 * @return
+	 * @throws Exception
+	 */
+	public static String decryptByPrivateKey(String data,String key) throws Exception{
+		byte[] dataBytes = BASE64.decode(data);
+		byte[] resultBytes = decryptByPrivateKey(dataBytes, key);
+		return new String(resultBytes,CHARTSET);
+	}
+	
+	/**
+	 * 私钥解密
+	 * @param data
+	 * @param key
+	 * @return
+	 * @throws Exception
+	 */
+	public static byte[] decryptByPrivateKey(byte[] data,String key) throws Exception{
+		byte[] keyBytes = BASE64.decode(key);
+		PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+		KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
+		PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
+		Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
+		cipher.init(Cipher.DECRYPT_MODE, privateKey);
+		return cipher.doFinal(data);
+	}
+
+
 	/**
 	 * 公钥解密
 	 * @param data
@@ -127,20 +193,8 @@ public class RSAUtils {
 		return cipher.doFinal(data);
 	}
 	
-	
-	private static KeyPairGenerator getKeyPairGen() throws NoSuchAlgorithmException {
-		if(keyPairGen==null){
-			synchronized (RSAUtils.class) {
-				if(keyPairGen==null){
-					keyPairGen = KeyPairGenerator.getInstance(ALGORITHM);
-					keyPairGen.initialize(KEY_SIZE);
-				}
-			}
-		}
-		return keyPairGen;
-	}
-	
-	
+
+
 	public static class RASKeys{
 		private PublicKey publicKey;
 		private PrivateKey privateKey;

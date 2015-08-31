@@ -1,5 +1,7 @@
 package com.pqpo.utils.security;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -10,21 +12,8 @@ public final class MD5Utils {
 
 	private MD5Utils(){}
 	
-	private volatile static MessageDigest md5;
-	
-	private static MessageDigest MD5() throws NoSuchAlgorithmException{
-		if(md5==null){
-			synchronized (MD5Utils.class) {
-				if(md5==null){
-					md5 = MessageDigest.getInstance(MD5);
-				}
-			}
-		}
-		return md5;
-	}
-	
 	public static byte[] digest(byte[] input) throws NoSuchAlgorithmException{
-		MessageDigest md5 = MD5();
+		MessageDigest md5 =  MessageDigest.getInstance(MD5);
 		return md5.digest(input);
 	}
 	
@@ -33,6 +22,19 @@ public final class MD5Utils {
 		return bytesToHex(digest);
 	}
 	
+	public static byte[] digest(InputStream in) throws Exception{
+		ByteArrayOutputStream baout = new ByteArrayOutputStream();
+		byte[] bytes = new byte[128];
+		int len = 0;
+		while((len = in.read(bytes))!=-1){
+			baout.write(bytes, 0, len);
+		}
+		byte[] digest =digest(baout.toByteArray());
+		baout.flush();
+		baout.close();
+		return digest;
+	}
+
 	/**
 	 * 二进制转十六进制
 	 * @param bytes
